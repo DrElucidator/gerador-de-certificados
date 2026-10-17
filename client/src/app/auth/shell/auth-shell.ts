@@ -4,7 +4,7 @@ import { LucideAward, LucideFileText } from '@lucide/angular';
 
 @Component({
   imports: [LucideFileText, LucideAward, RouterLink],
-  selector: 'app-pagina-autenticacao',
-  templateUrl: './pagina-autenticacao.html',
+  selector: 'app-auth-shell',
+  templateUrl: './auth-shell.html',
 })
-export class PaginaAutenticacao {}
+export class AuthShell {}
