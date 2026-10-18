@@ -1,8 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, Routes } from '@angular/router';
-import { URL_API } from './auth/auth.tokens';
-import { environment } from '../environments/environment.development';
+
+import { environment } from '../environments/environment';
+import { CHAVE_ARMAZENAMENTO, URL_API } from './auth/auth.tokens';
 
 const routes: Routes = [
   {
@@ -28,8 +29,13 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(),
-    { 
-      provide: URL_API, useValue: environment.urlApi 
+    {
+      provide: URL_API,
+      useValue: environment.urlApi,
+    },
+    {
+      provide: CHAVE_ARMAZENAMENTO,
+      useValue: 'certifica+.sessao',
     },
   ],
 };

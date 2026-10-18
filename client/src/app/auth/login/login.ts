@@ -1,13 +1,19 @@
+import { Observer } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
 import { afterNextRender, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { email, form, FormField, minLength, required } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { LucideArrowRight } from '@lucide/angular';
 
-import { ApiValidationProblemDetails, CadastroConcluidoNavigationState, LoginRequest, TokenDto } from '../auth.models';
+import {
+  ApiValidationProblemDetails,
+  CadastroConcluidoNavigationState,
+  LoginRequest,
+  TokenDto,
+} from '../auth.models';
 import { AuthService } from '../auth.service';
 import { AuthShell } from '../shell/auth-shell';
-import { Observer } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http';
 
 interface LoginFormModel {
   readonly email: string;
@@ -81,12 +87,13 @@ export class Login {
             ? 'E-mail ou senha incorretos. Confira suas credenciais e tente novamente.'
             : this.obterMensagemErroApi(response);
 
-            this.mensagemErro.set(mensagem);
+        this.mensagemErro.set(mensagem);
       },
     };
 
     this.authService.login(requisicao).subscribe(observer);
   }
+
   private obterMensagemErroApi(response: HttpErrorResponse): string {
     const problem = response.error as ApiValidationProblemDetails | null;
 
