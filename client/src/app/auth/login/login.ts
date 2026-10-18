@@ -13,7 +13,6 @@ import {
   TokenDto,
 } from '../auth.models';
 import { AuthService } from '../auth.service';
-import { AuthShell } from '../shell/auth-shell';
 
 interface LoginFormModel {
   readonly email: string;
@@ -21,7 +20,7 @@ interface LoginFormModel {
 }
 
 @Component({
-  imports: [LucideArrowRight, AuthShell, FormField, RouterLink],
+  imports: [LucideArrowRight, FormField, RouterLink],
   selector: 'app-login',
   templateUrl: './login.html',
 })
@@ -39,6 +38,8 @@ export class Login {
 
   protected readonly mensagemSucesso = signal('');
   protected readonly mensagemErro = signal('');
+
+  protected readonly enviandoFormulario = signal(false);
 
   private readonly tituloPagina = viewChild<ElementRef<HTMLHeadingElement>>('tituloPagina');
 
@@ -78,13 +79,20 @@ export class Login {
     };
 
     this.mensagemErro.set('');
+    this.enviandoFormulario.set(true);
 
     const observer: Partial<Observer<TokenDto>> = {
-      next: () => void this.router.navigateByUrl('/'),
+      next: () => {
+        this.enviandoFormulario.set(false);
+
+        void this.router.navigateByUrl('/');
+      },
       error: (response: HttpErrorResponse) => {
+        this.enviandoFormulario.set(false);
+
         const mensagem =
           response.status === 401
-            ? 'E-mail ou senha incorretos. Confira suas credenciais e tente novamente.'
+            ? 'Email ou senha incorretos. Configura suas credenciais e tente novamente.'
             : this.obterMensagemErroApi(response);
 
         this.mensagemErro.set(mensagem);
@@ -97,6 +105,6 @@ export class Login {
   private obterMensagemErroApi(response: HttpErrorResponse): string {
     const problem = response.error as ApiValidationProblemDetails | null;
 
-    return problem?.detail ?? 'Não foi possível conectar à API. Tente novamente mais tarde.';
+    return problem?.detail ?? 'Não foi possível conectar à API. Tente novamente em instantes';
   }
 }
