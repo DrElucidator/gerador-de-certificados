@@ -1,4 +1,5 @@
 using GeradorCertificados.Application.Cursos;
+using GeradorCertificados.Application.Certificados.DTOs;
 using GeradorCertificados.Domain.Certificados;
 using MediatR;
 

@@ -1,4 +1,5 @@
 using GeradorCertificados.Application.Cursos;
+using GeradorCertificados.Application.Certificados.DTOs;
 using GeradorCertificados.Domain.Certificados;
 using MediatR;
 
@@ -6,9 +7,9 @@ namespace GeradorCertificados.Application.Certificados.Queries;
 
 public sealed class ConsultarStatusSolicitacaoQueryHandler(
     IRepositorioCurso cursos,
-    ISolicitacaoCertificadoRepository solicitacoes) : IRequestHandler<ConsultarStatusSolicitacaoQuery, StatusSolicitacaoResponse>
+    ISolicitacaoCertificadoRepository solicitacoes) : IRequestHandler<ConsultarStatusSolicitacaoQuery, StatusSolicitacaoDto>
 {
-    public async Task<StatusSolicitacaoResponse> Handle(ConsultarStatusSolicitacaoQuery request, CancellationToken ct)
+    public async Task<StatusSolicitacaoDto> Handle(ConsultarStatusSolicitacaoQuery request, CancellationToken ct)
     {
         var curso = await cursos.ObterPorIdAsync(request.CursoId, ct);
         if (curso is null)
@@ -18,7 +19,7 @@ public sealed class ConsultarStatusSolicitacaoQueryHandler(
         if (solicitacao is null)
             throw new SolicitacaoNaoEncontradaException(request.CursoId);
 
-        return new StatusSolicitacaoResponse(
+        return new StatusSolicitacaoDto(
             solicitacao.Id,
             solicitacao.CursoId,
             solicitacao.Status,
@@ -28,12 +29,3 @@ public sealed class ConsultarStatusSolicitacaoQueryHandler(
             solicitacao.Certificados.Count(x => x.Status == StatusCertificado.Falha));
     }
 }
-
-public sealed record StatusSolicitacaoResponse(
-    Guid SolicitacaoId,
-    Guid CursoId,
-    StatusSolicitacaoCertificado Status,
-    DateTimeOffset DataSolicitacao,
-    int QuantidadeTotal,
-    int QuantidadeGerada,
-    int QuantidadeFalha);

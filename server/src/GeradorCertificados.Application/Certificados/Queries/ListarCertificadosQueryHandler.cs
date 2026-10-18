@@ -1,4 +1,5 @@
 using GeradorCertificados.Application.Cursos;
+using GeradorCertificados.Application.Certificados.DTOs;
 using GeradorCertificados.Domain.Certificados;
 using MediatR;
 
@@ -27,5 +28,3 @@ public sealed class ListarCertificadosQueryHandler(
             .ToList();
     }
 }
-
-public sealed record CertificadoResumo(Guid Id, string NomeAluno, StatusCertificado Status, DateTimeOffset? DataGeracao);

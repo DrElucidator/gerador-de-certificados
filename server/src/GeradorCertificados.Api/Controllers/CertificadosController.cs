@@ -1,6 +1,7 @@
 using GeradorCertificados.Api.Contracts.Certificados;
 using GeradorCertificados.Application.Certificados;
 using GeradorCertificados.Application.Certificados.Commands;
+using GeradorCertificados.Application.Certificados.DTOs;
 using GeradorCertificados.Application.Certificados.Queries;
 using GeradorCertificados.Domain.Certificados;
 using MediatR;

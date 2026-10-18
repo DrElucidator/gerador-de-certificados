@@ -1,5 +1,6 @@
 using GeradorCertificados.Api.Controllers;
 using GeradorCertificados.Application.Certificados;
+using GeradorCertificados.Application.Certificados.DTOs;
 using GeradorCertificados.Application.Certificados.Commands;
 using GeradorCertificados.Application.Certificados.Queries;
 using GeradorCertificados.Application.Cursos;
@@ -200,7 +201,7 @@ public sealed class DownloadCertificadosTests
             .ReturnsAsync((ArquivoCertificadoDownload?)null);
         mediator
             .Setup(x => x.Send(It.IsAny<ConsultarStatusSolicitacaoQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new StatusSolicitacaoResponse(solicitacaoId, cursoId, StatusSolicitacaoCertificado.Pendente, DateTimeOffset.UtcNow, 1, 0, 0));
+            .ReturnsAsync(new StatusSolicitacaoDto(solicitacaoId, cursoId, StatusSolicitacaoCertificado.Pendente, DateTimeOffset.UtcNow, 1, 0, 0));
 
         var controller = new CertificadosController(mediator.Object);
 

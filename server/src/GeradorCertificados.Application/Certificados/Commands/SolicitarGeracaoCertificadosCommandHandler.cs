@@ -1,4 +1,5 @@
 using GeradorCertificados.Application.Cursos;
+using GeradorCertificados.Application.Certificados.DTOs;
 using GeradorCertificados.Domain.Certificados;
 using MediatR;
 
@@ -54,5 +55,3 @@ public sealed class SolicitarGeracaoCertificadosCommandHandler(
             solicitacao.Certificados.Count);
     }
 }
-
-public sealed record SolicitacaoCertificadoResumo(Guid SolicitacaoId, Guid CursoId, StatusSolicitacaoCertificado Status, DateTimeOffset DataSolicitacao, int QuantidadeCertificados);
