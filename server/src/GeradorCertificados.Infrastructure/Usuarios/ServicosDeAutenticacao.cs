@@ -10,10 +10,42 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace GeradorCertificados.Infrastructure.Usuarios;
+
 public sealed class UsuarioRepository(AplicacaoDbContext db) : IUsuarioRepository
-{ public Task<bool> ExisteEmailAsync(string email, CancellationToken ct) => db.Usuarios.AnyAsync(x => x.Email == email, ct); public Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken ct) => db.Usuarios.SingleOrDefaultAsync(x => x.Email == email, ct); public async Task AdicionarAsync(Usuario usuario, CancellationToken ct) { db.Usuarios.Add(usuario); await db.SaveChangesAsync(ct); } }
+{
+    public Task<bool> ExisteEmailAsync(string email, CancellationToken ct)
+    {
+        return db.Usuarios.AnyAsync(x => x.Email == email, ct);
+    }
+
+    public Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken ct)
+    {
+        return db.Usuarios.SingleOrDefaultAsync(x => x.Email == email, ct);
+    }
+
+    public async Task AdicionarAsync(Usuario usuario, CancellationToken ct)
+    {
+        db.Usuarios.Add(usuario);
+        await db.SaveChangesAsync(ct);
+    }
+}
+
 public sealed class SenhaService : ISenhaService
-{ private readonly PasswordHasher<Usuario> _hasher = new(); public string GerarHash(Usuario usuario, string senha) => _hasher.HashPassword(usuario, senha); public bool Verificar(Usuario usuario, string senha) => _hasher.VerifyHashedPassword(usuario, usuario.SenhaHash, senha) != PasswordVerificationResult.Failed; }
+{
+    private readonly PasswordHasher<Usuario> hasher = new();
+
+    public string GerarHash(Usuario usuario, string senha)
+    {
+        return hasher.HashPassword(usuario, senha);
+    }
+
+    public bool Verificar(Usuario usuario, string senha)
+    {
+        return hasher.VerifyHashedPassword(usuario, usuario.SenhaHash, senha)
+            != PasswordVerificationResult.Failed;
+    }
+}
+
 public sealed class JwtSettings
 {
     public string Issuer { get; init; } = "GeradorCertificados";
