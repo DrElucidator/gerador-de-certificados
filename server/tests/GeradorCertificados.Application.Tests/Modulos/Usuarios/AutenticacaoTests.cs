@@ -69,7 +69,7 @@ public sealed class AutenticacaoTests
     }
     private sealed class TokenServiceFake : ITokenService
     {
-        public TokenDeAcesso Gerar(Usuario usuario) =>
+        public TokenDto Gerar(Usuario usuario) =>
             new(usuario.Id, "token", DateTimeOffset.UtcNow.AddHours(1));
     }
 }

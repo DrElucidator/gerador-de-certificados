@@ -57,7 +57,7 @@ public sealed class JwtSettings
 
 public sealed class JwtTokenService(IConfiguration config) : ITokenService
 {
-    public TokenDeAcesso Gerar(Usuario usuario)
+    public TokenDto Gerar(Usuario usuario)
     {
         var settings = config.GetRequiredSection("Jwt").Get<JwtSettings>()!;
         var chave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey));
@@ -74,6 +74,6 @@ public sealed class JwtTokenService(IConfiguration config) : ITokenService
 
         var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return new TokenDeAcesso(usuario.Id, accessToken, dataExpiracaoEmUtc);
+        return new TokenDto(usuario.Id, accessToken, dataExpiracaoEmUtc);
     }
 }

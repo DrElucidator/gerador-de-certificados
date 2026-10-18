@@ -4,17 +4,19 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GeradorCertificados.Api.Controllers;
-[ApiController, Route("auth"), AllowAnonymous]
+[ApiController]
+[Route("auth")]
+[AllowAnonymous]
 public sealed class AuthController(AutenticacaoService service) : ControllerBase
 {
     [HttpPost("cadastro")]
-    public async Task<ActionResult<UsuarioResponse>> Cadastro(CadastroRequest request, CancellationToken ct)
+    public async Task<ActionResult<UsuarioDto>> Cadastro(CadastroRequest request, CancellationToken ct)
     {
         try
         {
             var usuario = await service.CadastrarAsync(request.Email, request.Senha, ct);
 
-            return StatusCode(StatusCodes.Status201Created, new UsuarioResponse(usuario.Id, usuario.Email));
+            return StatusCode(StatusCodes.Status201Created, usuario);
         }
         catch (ConflitoDeNegocioException exception)
         {
@@ -27,13 +29,13 @@ public sealed class AuthController(AutenticacaoService service) : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<TokenResponse>> Login(LoginRequest request, CancellationToken ct)
+    public async Task<ActionResult<TokenDto>> Login(LoginRequest request, CancellationToken ct)
     {
         try
         {
             var token = await service.LoginAsync(request.Email, request.Senha, ct);
 
-            return Ok(new TokenResponse(token.UsuarioId, token.AccessToken, token.DataExpiracaoEmUtc));
+            return Ok(token);
         }
         catch (CredenciaisInvalidasException exception)
         {

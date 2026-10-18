@@ -7,7 +7,7 @@ public sealed class AutenticacaoService(
     ISenhaService senhas,
     ITokenService tokens)
 {
-    public async Task<Usuario> CadastrarAsync(string email, string senha, CancellationToken ct)
+    public async Task<UsuarioDto> CadastrarAsync(string email, string senha, CancellationToken ct)
     {
         ValidarSenha(senha);
         var normalizado = Usuario.NormalizarEmail(email);
@@ -16,9 +16,10 @@ public sealed class AutenticacaoService(
         var usuario = Usuario.Criar(normalizado, senhaHash);
         await usuarios.AdicionarAsync(usuario, ct);
 
-        return usuario;
+        return new UsuarioDto(usuario.Id, usuario.Email);
     }
-    public async Task<TokenDeAcesso> LoginAsync(string email, string senha, CancellationToken ct)
+
+    public async Task<TokenDto> LoginAsync(string email, string senha, CancellationToken ct)
     {
         var usuario = await usuarios.ObterPorEmailAsync(Usuario.NormalizarEmail(email), ct);
         if (usuario is null || !senhas.Verificar(usuario.SenhaHash, senha)) throw new CredenciaisInvalidasException();

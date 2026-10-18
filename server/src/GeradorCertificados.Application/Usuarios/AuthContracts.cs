@@ -20,10 +20,12 @@ public interface ISenhaService
 
 public interface ITokenService
 {
-    TokenDeAcesso Gerar(Usuario usuario);
+    TokenDto Gerar(Usuario usuario);
 }
 
-public sealed record TokenDeAcesso(
+public sealed record UsuarioDto(Guid Id, string Email);
+
+public sealed record TokenDto(
     Guid UsuarioId,
     string AccessToken,
     DateTimeOffset DataExpiracaoEmUtc);
