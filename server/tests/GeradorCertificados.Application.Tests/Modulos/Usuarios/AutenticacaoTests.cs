@@ -62,5 +62,9 @@ public sealed class AutenticacaoTests
         public Task AdicionarAsync(Usuario usuario, CancellationToken ct) => Task.CompletedTask;
     }
     private sealed class SenhaServiceFake : ISenhaService { public string GerarHash(Usuario usuario, string senha) => "hash"; public bool Verificar(Usuario usuario, string senha) => false; }
-    private sealed class TokenServiceFake : ITokenService { public string Gerar(Usuario usuario) => "token"; }
+    private sealed class TokenServiceFake : ITokenService
+    {
+        public TokenDeAcesso Gerar(Usuario usuario) =>
+            new(usuario.Id, "token", DateTimeOffset.UtcNow.AddHours(1));
+    }
 }

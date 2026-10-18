@@ -76,6 +76,7 @@
       <p id="dica-senha" class="mt-2 text-xs leading-5 text-slate-600">
         Use ao menos 8 caracteres, incluindo um número e um símbolo.
       </p>
+
       @if (formularioCadastro.senha().touched() && formularioCadastro.senha().invalid()) {
         <p id="cadastro-senha-erro" class="mt-1 text-sm text-rose-700">
           {{ formularioCadastro.senha().errors()[0].message }}

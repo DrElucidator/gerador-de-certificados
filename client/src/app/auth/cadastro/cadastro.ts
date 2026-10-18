@@ -1,10 +1,11 @@
-import { afterNextRender, Component, ElementRef, signal, viewChild } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { afterNextRender, Component, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { email, form, FormField, minLength, pattern, required } from '@angular/forms/signals';
+import { Router, RouterLink } from '@angular/router';
 import { LucideArrowRight } from '@lucide/angular';
 
+import { CadastroConcluidoNavigationState, CadastroRequest } from '../auth.models';
+import { AuthService } from '../auth.service';
 import { AuthShell } from '../shell/auth-shell';
-import { email, form, FormField, minLength, pattern, required } from '@angular/forms/signals';
-import { CadastroRequest } from '../shell/auth.models';
 
 interface CadastroFormModel {
   readonly email: string;
@@ -12,18 +13,20 @@ interface CadastroFormModel {
 }
 
 @Component({
-  standalone: true,
   imports: [LucideArrowRight, AuthShell, FormField, RouterLink],
   selector: 'app-cadastro',
   templateUrl: './cadastro.html',
 })
 export class Cadastro {
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
   private readonly tituloPagina = viewChild<ElementRef<HTMLHeadingElement>>('tituloPagina');
 
-  protected readonly modeloFormulario = signal<CadastroFormModel>({ email: '', senha: '' });
-  protected readonly formularioCadastro = form(this.modeloFormulario, (modelo) => {
-    required(modelo.email, { message: 'Informe seu e-mail.' });
-    email(modelo.email, { message: 'Informe um e-mail válido.' });
+  protected readonly modeloCadastro = signal<CadastroFormModel>({ email: '', senha: '' });
+  protected readonly formularioCadastro = form(this.modeloCadastro, (modelo) => {
+    required(modelo.email, { message: 'Informe seu email.' });
+    email(modelo.email, { message: 'Informe um email válido.' });
     required(modelo.senha, { message: 'Informe sua senha.' });
     minLength(modelo.senha, 8, { message: 'A senha precisa ter pelo menos 8 caracteres.' });
     pattern(modelo.senha, /(?=.*\d)(?=.*[^a-zA-Z0-9]).+/, {
@@ -35,12 +38,29 @@ export class Cadastro {
     afterNextRender(() => this.tituloPagina()?.nativeElement.focus());
   }
 
-  enviarFormulario(event: SubmitEvent) {
+  protected enviarFormulario(event: SubmitEvent): void {
     event.preventDefault();
 
-    const request: CadastroRequest = {
-      email: this.modeloFormulario().email,
-      senha: this.modeloFormulario().senha,
+    const formulario = this.formularioCadastro();
+
+    if (formulario.invalid()) {
+      formulario.markAsTouched();
+      return;
+    }
+
+    const modelo = this.modeloCadastro();
+
+    const requisicao: CadastroRequest = {
+      email: modelo.email,
+      senha: modelo.senha,
     };
+
+    this.authService.cadastrar(requisicao).subscribe((usuario) => {
+      const estadoNavegacao: CadastroConcluidoNavigationState = {
+        emailCadastrado: usuario.email,
+      };
+
+      void this.router.navigateByUrl('/login', { state: estadoNavegacao });
+    });
   }
 }
