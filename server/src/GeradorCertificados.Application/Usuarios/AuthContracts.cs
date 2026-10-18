@@ -13,9 +13,9 @@ public interface IUsuarioRepository
 
 public interface ISenhaService
 {
-    string GerarHash(Usuario usuario, string senha);
+    string GerarHash(string senha);
 
-    bool Verificar(Usuario usuario, string senha);
+    bool Verificar(string senhaHash, string senha);
 }
 
 public interface ITokenService

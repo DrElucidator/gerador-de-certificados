@@ -12,16 +12,16 @@ public sealed class AutenticacaoService(
         ValidarSenha(senha);
         var normalizado = Usuario.NormalizarEmail(email);
         if (await usuarios.ExisteEmailAsync(normalizado, ct)) throw new ConflitoDeNegocioException("Já existe um usuário com este email.");
-        var usuario = Usuario.Criar(normalizado, "pendente");
-        var comHash = Usuario.Criar(normalizado, senhas.GerarHash(usuario, senha));
-        await usuarios.AdicionarAsync(comHash, ct);
+        var senhaHash = senhas.GerarHash(senha);
+        var usuario = Usuario.Criar(normalizado, senhaHash);
+        await usuarios.AdicionarAsync(usuario, ct);
 
-        return comHash;
+        return usuario;
     }
     public async Task<TokenDeAcesso> LoginAsync(string email, string senha, CancellationToken ct)
     {
         var usuario = await usuarios.ObterPorEmailAsync(Usuario.NormalizarEmail(email), ct);
-        if (usuario is null || !senhas.Verificar(usuario, senha)) throw new CredenciaisInvalidasException();
+        if (usuario is null || !senhas.Verificar(usuario.SenhaHash, senha)) throw new CredenciaisInvalidasException();
         return tokens.Gerar(usuario);
     }
     private static void ValidarSenha(string senha)

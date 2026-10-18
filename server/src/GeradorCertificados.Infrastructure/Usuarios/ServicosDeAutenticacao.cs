@@ -32,16 +32,17 @@ public sealed class UsuarioRepository(AplicacaoDbContext db) : IUsuarioRepositor
 
 public sealed class SenhaService : ISenhaService
 {
-    private readonly PasswordHasher<Usuario> hasher = new();
+    private static readonly object referencia = new();
+    private readonly PasswordHasher<object> hasher = new();
 
-    public string GerarHash(Usuario usuario, string senha)
+    public string GerarHash(string senha)
     {
-        return hasher.HashPassword(usuario, senha);
+        return hasher.HashPassword(referencia, senha);
     }
 
-    public bool Verificar(Usuario usuario, string senha)
+    public bool Verificar(string senhaHash, string senha)
     {
-        return hasher.VerifyHashedPassword(usuario, usuario.SenhaHash, senha)
+        return hasher.VerifyHashedPassword(referencia, senhaHash, senha)
             != PasswordVerificationResult.Failed;
     }
 }
