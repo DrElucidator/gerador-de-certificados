@@ -1,85 +1,64 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy ASP.Net Core app to Azure Web App - Gerador-de-Certificados-API
+name: Build and deploy Gerador de Certificados API
 
 on:
   push:
     branches:
       - main
     paths:
-      - "server/**"
+      - 'server/**'
+      - '.github/workflows/main_gerador-de-certificados-api.yml'
   workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.x'
+  SOLUTION_PATH: server/GeradorCertificados.slnx
+  API_PROJECT: server/src/GeradorCertificados.Api/GeradorCertificados.Api.csproj
+  PUBLISH_DIRECTORY: ${{ github.workspace }}/publish
 
 jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET Core
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "10.x"
-
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
-
-      - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
-
-  migrate:
-    runs-on: windows-latest
-    needs: build
-    permissions:
-      contents: read #This is required for actions/checkout
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.x"
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
-        run: dotnet restore server/src/Api/GeradorCertificadosOnline.Api.csproj
+        run: dotnet restore $env:SOLUTION_PATH
 
-      - name: Restore tools
-        run: dotnet tool restore --tool-manifest server/dotnet-tools.json
+      - name: Build solution
+        run: dotnet build $env:SOLUTION_PATH --configuration Release --no-restore
 
-      - name: Apply ORM migrations to AzureSQL
-        env:
-          SQLSERVER_CONNECTIONSTRING: ${{ secrets.SQLSERVER_CONNECTIONSTRING }}
-          NewRelic__LicenseKey: ${{ secrets.NEWRELIC_LICENSE_KEY }}
-        run: |
-          dotnet ef database update `
-            --project server/src/Infraestrutura/GeradorCertificadosOnline.Infraestrutura.csproj `
-            --startup-project server/src/Api/GeradorCertificadosOnline.Api.csproj `
-            --configuration Release `
-            --connection "$env:SQLSERVER_CONNECTIONSTRING"
+      - name: Run tests
+        run: dotnet test $env:SOLUTION_PATH --configuration Release --no-build
+
+      - name: Publish API
+        run: dotnet publish $env:API_PROJECT --configuration Release --no-build --output $env:PUBLISH_DIRECTORY
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: ${{ env.PUBLISH_DIRECTORY }}
 
   deploy:
     runs-on: windows-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      contents: read
+      id-token: write
 
     steps:
-      - name: Download artifact from build job
+      - name: Download deployment artifact
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
+          name: api
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -88,23 +67,9 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3A9FFDBAF4DD4717B3933FE63C547161 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_38870140B761402EB2AD5D629D582A8B }}
 
-      - name: Configure Azure Web App settings
-        shell: pwsh
-        run: |
-          az webapp config appsettings set `
-            --resource-group "gerador-de-certificados-fullstack" `
-            --name "gerador-de-certificados-fullstack" `
-            --settings `
-              "ConnectionStrings__SqlServer=${{ secrets.SQLSERVER_CONNECTIONSTRING }}" `
-              "ConnectionStrings__RabbitMq=${{ secrets.RABBITMQ_CONNECTIONSTRING }}" `
-              "Jwt__SigningKey=${{ secrets.JWT_SIGNING_KEY }}" `
-              "NewRelic__LicenseKey=${{ secrets.NEWRELIC_LICENSE_KEY }}" `
-              "LuckyPenny__LicenseKey=${{ secrets.LUCKYPENNY_LICENSE_KEY }}"
-
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "Gerador-de-Certificados-API"
-          slot-name: "Production"
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          slot-name: Production
           package: .
