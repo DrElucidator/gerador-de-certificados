@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { form, FormField, required } from '@angular/forms/signals';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -41,6 +41,11 @@ export class CertificadosCurso {
   });
   protected readonly status = signal<StatusProcessamentoDto | null>(null);
   protected readonly certificados = signal<readonly CertificadoDto[]>([]);
+  protected readonly processamentoAtivo = computed(() => {
+    const status = this.status()?.status;
+
+    return status ? this.processamentoEmAndamento(status) : false;
+  });
 
   constructor() {
     this.destroyRef.onDestroy(() => this.cancelarAtualizacaoStatus());
