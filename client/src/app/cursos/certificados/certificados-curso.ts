@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { form, FormField, required } from '@angular/forms/signals';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -24,8 +24,10 @@ interface CertificadosFormModel {
 })
 export class CertificadosCurso {
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly cursosService = inject(CursosService);
   private readonly certificadosService = inject(CertificadosService);
+  private atualizacaoStatusAgendada?: ReturnType<typeof setTimeout>;
 
   protected readonly cursoId = this.route.snapshot.paramMap.get('cursoId') ?? '';
   protected readonly curso = signal<CursoDto | null>(null);
@@ -41,6 +43,8 @@ export class CertificadosCurso {
   protected readonly certificados = signal<readonly CertificadoDto[]>([]);
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.cancelarAtualizacaoStatus());
+
     this.cursosService.obterPorId(this.cursoId).subscribe({
       next: (curso) => {
         this.curso.set(curso);
@@ -103,11 +107,20 @@ export class CertificadosCurso {
     });
   }
 
+  protected atualizarStatus(): void {
+    this.cancelarAtualizacaoStatus();
+    this.carregarStatusProcessamento();
+  }
+
   private carregarStatusProcessamento(): void {
     this.certificadosService.obterStatus(this.cursoId).subscribe({
       next: (status) => {
         this.status.set(status);
         this.carregarCertificados();
+
+        if (this.processamentoEmAndamento(status.status)) {
+          this.agendarAtualizacaoStatus();
+        }
       },
       error: (resposta: HttpErrorResponse) => {
         this.status.set(null);
@@ -132,11 +145,33 @@ export class CertificadosCurso {
       error: (resposta: HttpErrorResponse) => {
         if (resposta.status !== 404) {
           this.mensagemErro.set(
-            this.obterMensagemErroApi(resposta, 'Não foi possível listar os certificados do curso.'),
+            this.obterMensagemErroApi(
+              resposta,
+              'Não foi possível listar os certificados do curso.',
+            ),
           );
         }
       },
     });
+  }
+
+  private processamentoEmAndamento(status: string): boolean {
+    return status === 'Pendente' || status === 'GerandoCertificados' || status === 'GerandoZip';
+  }
+
+  private agendarAtualizacaoStatus(): void {
+    this.cancelarAtualizacaoStatus();
+
+    this.atualizacaoStatusAgendada = setTimeout(() => {
+      this.carregarStatusProcessamento();
+    }, 2_000);
+  }
+
+  private cancelarAtualizacaoStatus(): void {
+    if (this.atualizacaoStatusAgendada) {
+      clearTimeout(this.atualizacaoStatusAgendada);
+      this.atualizacaoStatusAgendada = undefined;
+    }
   }
 
   private obterMensagemErroApi(resposta: HttpErrorResponse, mensagemPadrao: string): string {
