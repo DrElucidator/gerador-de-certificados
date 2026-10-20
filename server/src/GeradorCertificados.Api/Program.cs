@@ -1,0 +1,58 @@
+using GeradorCertificados.Api;
+using GeradorCertificados.Application;
+using GeradorCertificados.Infrastructure;
+using GeradorCertificados.Infrastructure.Usuarios;
+using GeradorCertificados.Infrastructure.Persistencia;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
+using System.Text;
+
+const string corsPolicyCliente = "Client";
+
+var builder = WebApplication.CreateBuilder(args);
+
+var origensPermitidas = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
+builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+var jwt = builder.Configuration.GetRequiredSection("Jwt").Get<JwtSettings>() ?? throw new InvalidOperationException("A configuração Jwt é obrigatória.");
+if (string.IsNullOrWhiteSpace(jwt.SigningKey)) throw new InvalidOperationException("Configure Jwt:SigningKey com User Secrets ou variável de ambiente.");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o => o.TokenValidationParameters = new()
+{ ValidateIssuer = true, ValidIssuer = jwt.Issuer, ValidateAudience = true, ValidAudience = jwt.Audience, ValidateLifetime = true, ValidateIssuerSigningKey = true, IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)) });
+builder.Services.AddAuthorization(o => o.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+
+builder.Services.AddCors(options => options.AddPolicy(corsPolicyCliente, policy =>
+{
+    if(origensPermitidas.Length > 0)
+        policy.WithOrigins(origensPermitidas);
+
+    policy.AllowAnyHeader()
+        .AllowAnyMethod();
+}));
+
+var app = builder.Build();
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<AplicacaoDbContext>().Database.Migrate();
+}
+app.UseExceptionHandler();
+app.UseHttpsRedirection();
+
+app.UseCors(corsPolicyCliente);
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.MapGet("/", () => Results.Ok(new
+{
+    status = "online",
+    aplicacao = "Gerador de Certificados API"
+})).AllowAnonymous();
+app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+app.Run();
