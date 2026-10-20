@@ -31,6 +31,7 @@ public sealed class SolicitacaoCertificadoRepository(AplicacaoDbContext db) : IS
             .Include(x => x.Certificados)
             .Where(x => x.CursoId == cursoId)
             .OrderByDescending(x => x.DataSolicitacao)
+            .ThenByDescending(x => x.Id)
             .FirstOrDefaultAsync(ct);
 
     public Task<IReadOnlyCollection<SolicitacaoCertificado>> ObterPorCursoAsync(Guid cursoId, CancellationToken ct)
