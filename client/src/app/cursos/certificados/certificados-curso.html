@@ -117,9 +117,10 @@
             <button
               type="button"
               class="rounded-xl bg-indigo-700 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled
+              (click)="baixarZip()"
+              [disabled]="status()?.status !== 'Concluido' || baixando()"
             >
-              Baixar ZIP
+              {{ baixando() ? 'Baixando ZIP...' : 'Baixar ZIP' }}
             </button>
           </div>
         </div>
