@@ -17,6 +17,11 @@ public sealed class ServicoCursos(IRepositorioCurso cursos)
         return curso;
     }
 
+    public Task<IReadOnlyList<Curso>> ListarAsync(CancellationToken ct)
+    {
+        return cursos.ListarAsync(ct);
+    }
+
     public Task<Curso?> ConsultarAsync(Guid id, CancellationToken ct)
     {
         return cursos.ObterPorIdAsync(id, ct);

@@ -76,6 +76,7 @@ public sealed class ZipCertificadosTests
     private sealed class FakeCursoRepository(Curso? curso) : IRepositorioCurso
     {
         public Task AdicionarAsync(Curso curso, CancellationToken ct) => Task.CompletedTask;
+        public Task<IReadOnlyList<Curso>> ListarAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<Curso>>(curso is null ? [] : [curso]);
         public Task<Curso?> ObterPorIdAsync(Guid id, CancellationToken ct) => Task.FromResult(curso);
     }
 
