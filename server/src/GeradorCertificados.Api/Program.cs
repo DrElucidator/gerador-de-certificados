@@ -44,15 +44,14 @@ if (app.Environment.IsDevelopment())
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseCors(corsPolicyCliente);
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapGet("/", () => Results.Ok(new
-{
-    status = "online",
-    aplicacao = "Gerador de Certificados API"
-})).AllowAnonymous();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
+app.MapFallbackToFile("index.html").AllowAnonymous();
 app.Run();
