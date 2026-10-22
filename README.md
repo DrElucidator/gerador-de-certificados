@@ -1,6 +1,34 @@
+<div align="center">
+
 # 🎓 Gerador de Certificados
 
-API REST desenvolvida em **ASP.NET Core / .NET 10** para gerenciamento de cursos e geração assíncrona de certificados em PDF.
+Aplicação web para cadastro de cursos e geração assíncrona de certificados em PDF.
+
+[![Acessar aplicação](https://img.shields.io/badge/Acessar_aplica%C3%A7%C3%A3o-4F46E5?style=for-the-badge&logo=googlechrome&logoColor=white)](https://gerador-de-certificados-api-cehwdfahhbhsbdeh.canadacentral-01.azurewebsites.net/)
+
+<img src="https://skillicons.dev/icons?i=dotnet,cs,angular,ts,tailwind,postgres,rabbitmq,azure,githubactions" alt=".NET, C#, Angular, TypeScript, Tailwind CSS, PostgreSQL, RabbitMQ, Azure e GitHub Actions" />
+
+[![SQL Server](https://img.shields.io/badge/SQL_Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/sql-server)
+
+</div>
+
+## 📑 Sumário
+
+- [Funcionalidades](#funcionalidades)
+- [Demonstração](#demonstracao)
+- [Arquitetura](#arquitetura)
+- [Tecnologias utilizadas](#tecnologias)
+- [Executando localmente](#execucao-local)
+- [Autenticação](#autenticacao)
+- [Endpoints](#endpoints)
+- [Processamento assíncrono](#processamento-assincrono)
+- [PDFs e ZIP](#pdfs-e-zip)
+- [Testes automatizados](#testes)
+- [Ambiente de produção e CI/CD](#producao-cicd)
+
+---
+
+API REST e cliente web desenvolvidos com **ASP.NET Core / .NET 10** e **Angular** para gerenciamento de cursos e geração assíncrona de certificados em PDF.
 
 O projeto permite cadastrar usuários, autenticar por JWT, cadastrar cursos, solicitar a geração de certificados para múltiplos alunos e acompanhar o processamento até a disponibilização de um arquivo ZIP para download.
 
@@ -8,7 +36,29 @@ A geração dos certificados é realizada de forma assíncrona utilizando **Mass
 
 A aplicação possui suporte a **PostgreSQL** e **SQL Server**, permitindo selecionar o provider de banco por configuração. Em produção, a solução utiliza **Azure App Service**, **Azure SQL** e **CloudAMQP**.
 
+> **Aplicação online:** [gerador-de-certificados-api-cehwdfahhbhsbdeh.canadacentral-01.azurewebsites.net](https://gerador-de-certificados-api-cehwdfahhbhsbdeh.canadacentral-01.azurewebsites.net/)
+
 ---
+
+<a id="demonstracao"></a>
+
+## 🎥 Demonstração
+
+Gravação contínua do uso da interface, do acesso à plataforma ao fluxo de cursos e certificados.
+
+### Fluxo da aplicação
+
+![Demonstração completa da aplicação](docs/demonstracao/demonstracao-completa.gif)
+
+### Certificado gerado
+
+Resultado completo do processamento de um certificado para o curso Web API. O download é disponibilizado quando o processamento assíncrono é concluído.
+
+![Certificado de Pedro Santos para o curso Web API](docs/demonstracao/certificado-pedro-santos.png)
+
+---
+
+<a id="funcionalidades"></a>
 
 ## 📋 Funcionalidades
 
@@ -30,11 +80,12 @@ Atualmente o sistema possui:
 - Migrations separadas por provider;
 - Tratamento global de exceções;
 - Testes automatizados;
-- Publicação automatizada no Azure através do GitHub Actions.
-
-> **Frontend:** a interface gráfica não faz parte do escopo atual desta etapa do projeto. O frontend será abordado posteriormente conforme orientação das aulas.
+- Publicação automatizada no Azure através do GitHub Actions;
+- Interface web responsiva para cadastro, login, cursos, solicitação, acompanhamento e download dos certificados.
 
 ---
+
+<a id="arquitetura"></a>
 
 ## 🏗️ Arquitetura
 
@@ -122,6 +173,8 @@ gerador-de-certificados/
 
 ---
 
+<a id="tecnologias"></a>
+
 ## 🛠️ Tecnologias utilizadas
 
 ### Backend
@@ -131,6 +184,12 @@ gerador-de-certificados/
 - Entity Framework Core 10
 - MediatR
 - JWT Bearer Authentication
+
+### Frontend
+
+- Angular
+- TypeScript
+- Tailwind CSS
 
 ### Banco de dados
 
@@ -165,6 +224,8 @@ gerador-de-certificados/
 - CloudAMQP
 
 ---
+
+<a id="execucao-local"></a>
 
 # 🚀 Executando o projeto localmente
 
@@ -476,20 +537,17 @@ HTTPS → https://localhost:7225
 
 A URL efetivamente utilizada deve ser confirmada pelo log exibido no startup.
 
-### Verificar disponibilidade
+### Acessar a interface local
 
-```text
-GET /
+Com a API em execução, inicie o cliente em outro terminal:
+
+```powershell
+cd client
+npm install
+npm start
 ```
 
-Resposta esperada:
-
-```json
-{
-  "status": "online",
-  "aplicacao": "Gerador de Certificados API"
-}
-```
+A interface estará disponível em `http://localhost:4200` e a API em `http://localhost:5154`.
 
 ### Health check
 
@@ -506,6 +564,8 @@ Resposta:
 ```
 
 ---
+
+<a id="autenticacao"></a>
 
 # 🔑 Autenticação
 
@@ -537,6 +597,8 @@ O email é:
 - armazenado com restrição de unicidade.
 
 ---
+
+<a id="endpoints"></a>
 
 # 🌐 Endpoints
 
@@ -659,6 +721,8 @@ Download
 
 ---
 
+<a id="processamento-assincrono"></a>
+
 # 📨 Processamento assíncrono
 
 A solicitação de certificados não gera os documentos diretamente durante a requisição HTTP.
@@ -722,6 +786,8 @@ A aplicação também impede múltiplas solicitações ativas para o mesmo curso
 
 ---
 
+<a id="pdfs-e-zip"></a>
+
 # 📄 PDFs e ZIP
 
 Os certificados são gerados utilizando **QuestPDF**.
@@ -746,7 +812,21 @@ Os caminhos físicos dos arquivos não são expostos pela listagem pública da A
 
 O download do ZIP é realizado através de endpoint autenticado.
 
+Para facilitar a identificação após o download, o arquivo utiliza o padrão:
+
+```text
+Certificados - Nome do Curso.zip
+```
+
+Cada PDF dentro do ZIP utiliza:
+
+```text
+Certificado - Nome do Aluno - Nome do Curso.pdf
+```
+
 ---
+
+<a id="testes"></a>
 
 # 🧪 Testes automatizados
 
@@ -814,6 +894,8 @@ TreatWarningsAsErrors=true
 além de nullable reference types e implicit usings habilitados.
 
 ---
+
+<a id="producao-cicd"></a>
 
 # ☁️ Ambiente de produção
 
@@ -1095,19 +1177,12 @@ GET /health
 
 Ele não realiza atualmente uma verificação profunda de dependências como banco de dados e RabbitMQ.
 
-## Frontend
-
-O frontend não faz parte do escopo atual desta etapa.
-
-A interface gráfica será desenvolvida posteriormente conforme a evolução das aulas e requisitos do projeto.
-
 ---
 
 # 🔮 Possíveis evoluções
 
 Algumas melhorias que podem ser incorporadas futuramente:
 
-- frontend para utilização da API;
 - Azure Blob Storage para PDFs e ZIPs;
 - readiness checks para banco e RabbitMQ;
 - observabilidade e métricas;
@@ -1224,7 +1299,7 @@ O backend atualmente contempla:
 - [x] CI/CD com GitHub Actions
 - [x] Tratamento global de exceções
 - [x] Documentação do backend
-- [ ] Frontend — etapa futura
+- [x] Frontend Angular integrado à API
 
 ---
 
