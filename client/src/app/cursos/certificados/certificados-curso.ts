@@ -3,6 +3,7 @@ import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, required } from '@angular/forms/signals';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { LucideArrowLeft, LucideFileText, LucideFolderArchive } from '@lucide/angular';
 import { exhaustMap, interval, Subscription } from 'rxjs';
 
 import { ApiValidationProblemDetails } from '../../auth/auth.models';
@@ -20,7 +21,7 @@ interface CertificadosFormModel {
 }
 
 @Component({
-  imports: [FormField, RouterLink],
+  imports: [LucideFileText, LucideFolderArchive, LucideArrowLeft, FormField, RouterLink],
   selector: 'app-certificados-curso',
   templateUrl: './certificados-curso.html',
 })
