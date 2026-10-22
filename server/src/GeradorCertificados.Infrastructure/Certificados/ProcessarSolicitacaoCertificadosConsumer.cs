@@ -107,12 +107,21 @@ public sealed class ProcessarSolicitacaoCertificadosConsumer(
                     return;
                 }
 
-                var idsGerados = solicitacao.Certificados
+                var curso = await cursos.ObterPorIdAsync(solicitacao.CursoId, ct);
+                if (curso is null)
+                {
+                    solicitacao.MarcarFalha();
+                    await solicitacoes.SalvarAlteracoesAsync(ct);
+                    logger?.LogWarning("Solicitação {SolicitacaoId} entrou em GerandoZip com curso inexistente.", solicitacaoId);
+                    return;
+                }
+
+                var certificadosGerados = solicitacao.Certificados
                     .Where(x => x.Status == StatusCertificado.Gerado)
-                    .Select(x => x.Id)
+                    .Select(x => new CertificadoParaZip(x.Id, x.NomeAluno, curso.Nome))
                     .ToList();
 
-                if (idsGerados.Count == 0)
+                if (certificadosGerados.Count == 0)
                 {
                     solicitacao.MarcarFalha();
                     await solicitacoes.SalvarAlteracoesAsync(ct);
@@ -120,7 +129,7 @@ public sealed class ProcessarSolicitacaoCertificadosConsumer(
                     return;
                 }
 
-                geradorZip.GerarZip(solicitacao.Id, idsGerados);
+                geradorZip.GerarZip(solicitacao.Id, certificadosGerados);
                 solicitacao.Concluir();
                 await solicitacoes.SalvarAlteracoesAsync(ct);
                 logger?.LogInformation("ZIP gerado com sucesso para solicitação {SolicitacaoId}.", solicitacaoId);

@@ -128,7 +128,7 @@ public sealed class DownloadCertificadosTests
         Assert.IsNotNull(resultado);
         CollectionAssert.AreEqual(zipBytes, resultado!.Conteudo);
         Assert.AreEqual("application/zip", resultado.ContentType);
-        Assert.AreEqual($"certificados-{solicitacao.Id}.zip", resultado.NomeArquivo);
+        Assert.AreEqual("Certificados - Curso.zip", resultado.NomeArquivo);
         Assert.IsFalse(resultado.NomeArquivo.Contains("/", StringComparison.Ordinal));
         Assert.IsFalse(resultado.NomeArquivo.Contains("\\", StringComparison.Ordinal));
     }
@@ -258,7 +258,7 @@ public sealed class DownloadCertificadosTests
         public string ObterCaminhoRelativo(Guid solicitacaoId) => $"certificados/{solicitacaoId}/certificados.zip";
         public string ObterCaminhoFisico(Guid solicitacaoId) => Path.Combine("C:/tmp", solicitacaoId.ToString(), "certificados.zip");
         public bool Existe(Guid solicitacaoId) => zipExiste;
-        public void GerarZip(Guid solicitacaoId, IEnumerable<Guid> certificadosGerados) { }
+        public void GerarZip(Guid solicitacaoId, IEnumerable<CertificadoParaZip> certificadosGerados) { }
         public byte[] LerZip(Guid solicitacaoId) => dados ?? Array.Empty<byte>();
     }
 }

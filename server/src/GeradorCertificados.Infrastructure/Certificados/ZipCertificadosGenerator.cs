@@ -17,16 +17,17 @@ public sealed class ZipCertificadosGenerator(string diretorioBase) : IGeradorZip
     public bool Existe(Guid solicitacaoId)
         => File.Exists(ObterCaminhoFisico(solicitacaoId));
 
-    public void GerarZip(Guid solicitacaoId, IEnumerable<Guid> certificadosGerados)
+    public void GerarZip(Guid solicitacaoId, IEnumerable<CertificadoParaZip> certificadosGerados)
     {
         ArgumentNullException.ThrowIfNull(certificadosGerados);
 
-        var ids = certificadosGerados
-            .Distinct()
-            .OrderBy(x => x)
+        var certificados = certificadosGerados
+            .GroupBy(x => x.Id)
+            .Select(x => x.First())
+            .OrderBy(x => x.NomeAluno)
             .ToList();
 
-        if (ids.Count == 0)
+        if (certificados.Count == 0)
             throw new InvalidOperationException("Não há certificados gerados para empacotar.");
 
         var diretorioSolicitacao = Path.Combine(Path.GetFullPath(diretorioBase), solicitacaoId.ToString());
@@ -38,13 +39,17 @@ public sealed class ZipCertificadosGenerator(string diretorioBase) : IGeradorZip
         using (var stream = File.Create(caminhoTemporario))
         using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: false))
         {
-            foreach (var certificadoId in ids)
+            var nomesUtilizados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var certificado in certificados)
             {
-                var caminhoArquivo = Path.Combine(diretorioSolicitacao, $"{certificadoId}.pdf");
+                var caminhoArquivo = Path.Combine(diretorioSolicitacao, $"{certificado.Id}.pdf");
                 if (!File.Exists(caminhoArquivo))
                     continue;
 
-                var entrada = archive.CreateEntry($"{certificadoId}.pdf");
+                var nomeBase = NomesArquivosCertificados.ParaPdf(certificado.NomeAluno, certificado.NomeCurso);
+                var nomeEntrada = ObterNomeDisponivel(nomeBase, nomesUtilizados);
+                var entrada = archive.CreateEntry(nomeEntrada);
                 using var entradaStream = entrada.Open();
                 using var arquivo = File.OpenRead(caminhoArquivo);
                 arquivo.CopyTo(entradaStream);
@@ -63,5 +68,23 @@ public sealed class ZipCertificadosGenerator(string diretorioBase) : IGeradorZip
         return File.Exists(caminho)
             ? File.ReadAllBytes(caminho)
             : throw new FileNotFoundException("ZIP não encontrado para a solicitação.", caminho);
+    }
+
+    private static string ObterNomeDisponivel(string nome, ISet<string> nomesUtilizados)
+    {
+        if (nomesUtilizados.Add(nome))
+            return nome;
+
+        var nomeSemExtensao = Path.GetFileNameWithoutExtension(nome);
+        var extensao = Path.GetExtension(nome);
+        var indice = 2;
+        string candidato;
+
+        do
+        {
+            candidato = $"{nomeSemExtensao} ({indice++}){extensao}";
+        } while (!nomesUtilizados.Add(candidato));
+
+        return candidato;
     }
 }

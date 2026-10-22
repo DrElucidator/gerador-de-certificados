@@ -27,6 +27,6 @@ public sealed class ObterDownloadCertificadosQueryHandler(
             return null;
 
         var zip = zipGenerator.LerZip(solicitacao.Id);
-        return new ArquivoCertificadoDownload(zip, $"certificados-{solicitacao.Id}.zip", "application/zip");
+        return new ArquivoCertificadoDownload(zip, NomesArquivosCertificados.ParaZip(curso.Nome), "application/zip");
     }
 }

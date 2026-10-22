@@ -58,11 +58,15 @@ public sealed class ZipCertificadosTests
     {
         var solicitacaoId = Guid.NewGuid();
         var zipGenerator = new ZipCertificadosGenerator("C:/tmp/gerador-zip-tests");
-        var certificados = new[] { Guid.NewGuid(), Guid.NewGuid() };
+        var certificados = new[]
+        {
+            new CertificadoParaZip(Guid.NewGuid(), "Maria da Silva", "Curso de C#"),
+            new CertificadoParaZip(Guid.NewGuid(), "José da Silva", "Curso de C#")
+        };
 
         Directory.CreateDirectory(Path.Combine("C:/tmp/gerador-zip-tests", solicitacaoId.ToString()));
-        File.WriteAllBytes(Path.Combine("C:/tmp/gerador-zip-tests", solicitacaoId.ToString(), $"{certificados[0]}.pdf"), new byte[] { 1, 2, 3 });
-        File.WriteAllBytes(Path.Combine("C:/tmp/gerador-zip-tests", solicitacaoId.ToString(), $"{certificados[1]}.pdf"), new byte[] { 4, 5, 6 });
+        File.WriteAllBytes(Path.Combine("C:/tmp/gerador-zip-tests", solicitacaoId.ToString(), $"{certificados[0].Id}.pdf"), new byte[] { 1, 2, 3 });
+        File.WriteAllBytes(Path.Combine("C:/tmp/gerador-zip-tests", solicitacaoId.ToString(), $"{certificados[1].Id}.pdf"), new byte[] { 4, 5, 6 });
 
         zipGenerator.GerarZip(solicitacaoId, certificados);
 
@@ -70,7 +74,37 @@ public sealed class ZipCertificadosTests
         Assert.IsTrue(File.Exists(zipPath));
         using var archive = ZipFile.OpenRead(zipPath);
         Assert.HasCount(2, archive.Entries);
-        CollectionAssert.AreEquivalent(new[] { $"{certificados[0]}.pdf", $"{certificados[1]}.pdf" }, archive.Entries.Select(x => x.FullName).ToArray());
+        CollectionAssert.AreEquivalent(
+            new[] { "Certificado - Maria da Silva - Curso de C#.pdf", "Certificado - José da Silva - Curso de C#.pdf" },
+            archive.Entries.Select(x => x.FullName).ToArray());
+    }
+
+    [TestMethod]
+    public void GerarZip_ComNomesRepetidos_AcrescentaSufixoSemAlterarArquivosInternos()
+    {
+        var solicitacaoId = Guid.NewGuid();
+        var zipGenerator = new ZipCertificadosGenerator("C:/tmp/gerador-zip-tests");
+        var certificados = new[]
+        {
+            new CertificadoParaZip(Guid.NewGuid(), "Maria/Joana", "Curso: C#"),
+            new CertificadoParaZip(Guid.NewGuid(), "Maria/Joana", "Curso: C#")
+        };
+
+        var diretorio = Path.Combine("C:/tmp/gerador-zip-tests", solicitacaoId.ToString());
+        Directory.CreateDirectory(diretorio);
+        foreach (var certificado in certificados)
+            File.WriteAllBytes(Path.Combine(diretorio, $"{certificado.Id}.pdf"), [1, 2, 3]);
+
+        zipGenerator.GerarZip(solicitacaoId, certificados);
+
+        using var archive = ZipFile.OpenRead(Path.Combine(diretorio, "certificados.zip"));
+        CollectionAssert.AreEquivalent(
+            new[]
+            {
+                "Certificado - Maria-Joana - Curso- C#.pdf",
+                "Certificado - Maria-Joana - Curso- C# (2).pdf"
+            },
+            archive.Entries.Select(x => x.FullName).ToArray());
     }
 
     private sealed class FakeCursoRepository(Curso? curso) : IRepositorioCurso
@@ -121,7 +155,7 @@ public sealed class ZipCertificadosTests
         public string ObterCaminhoRelativo(Guid solicitacaoId) => $"certificados/{solicitacaoId}/certificados.zip";
         public string ObterCaminhoFisico(Guid solicitacaoId) => Path.Combine("C:/tmp/gerador-zip-tests", solicitacaoId.ToString(), "certificados.zip");
         public bool Existe(Guid solicitacaoId) => _solicitacoes.Contains(solicitacaoId);
-        public void GerarZip(Guid solicitacaoId, IEnumerable<Guid> certificadosGerados)
+        public void GerarZip(Guid solicitacaoId, IEnumerable<CertificadoParaZip> certificadosGerados)
         {
             QuantidadeChamadas++;
             _solicitacoes.Add(solicitacaoId);
