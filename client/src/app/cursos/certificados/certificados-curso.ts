@@ -1,7 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormField, required } from '@angular/forms/signals';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { exhaustMap, interval, Subscription } from 'rxjs';
 
 import { ApiValidationProblemDetails } from '../../auth/auth.models';
 import { CursoDto } from '../cursos.models';
@@ -27,7 +29,7 @@ export class CertificadosCurso {
   private readonly destroyRef = inject(DestroyRef);
   private readonly cursosService = inject(CursosService);
   private readonly certificadosService = inject(CertificadosService);
-  private atualizacaoStatusAgendada?: ReturnType<typeof setTimeout>;
+  private consultaStatus?: Subscription;
 
   protected readonly cursoId = this.route.snapshot.paramMap.get('cursoId') ?? '';
   protected readonly curso = signal<CursoDto | null>(null);
@@ -48,8 +50,6 @@ export class CertificadosCurso {
   });
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.cancelarAtualizacaoStatus());
-
     this.cursosService.obterPorId(this.cursoId).subscribe({
       next: (curso) => {
         this.curso.set(curso);
@@ -113,19 +113,13 @@ export class CertificadosCurso {
   }
 
   protected atualizarStatus(): void {
-    this.cancelarAtualizacaoStatus();
     this.carregarStatusProcessamento();
   }
 
   private carregarStatusProcessamento(): void {
     this.certificadosService.obterStatus(this.cursoId).subscribe({
       next: (status) => {
-        this.status.set(status);
-        this.carregarCertificados();
-
-        if (this.processamentoEmAndamento(status.status)) {
-          this.agendarAtualizacaoStatus();
-        }
+        this.atualizarProcessamento(status);
       },
       error: (resposta: HttpErrorResponse) => {
         this.status.set(null);
@@ -164,19 +158,45 @@ export class CertificadosCurso {
     return status === 'Pendente' || status === 'GerandoCertificados' || status === 'GerandoZip';
   }
 
-  private agendarAtualizacaoStatus(): void {
-    this.cancelarAtualizacaoStatus();
+  private atualizarProcessamento(status: StatusProcessamentoDto): void {
+    this.status.set(status);
+    this.carregarCertificados();
 
-    this.atualizacaoStatusAgendada = setTimeout(() => {
-      this.carregarStatusProcessamento();
-    }, 2_000);
+    if (this.processamentoEmAndamento(status.status)) {
+      this.inicializarAtualizacaoStatus();
+      return;
+    }
+
+    this.pararAtualizacaoStatus();
   }
 
-  private cancelarAtualizacaoStatus(): void {
-    if (this.atualizacaoStatusAgendada) {
-      clearTimeout(this.atualizacaoStatusAgendada);
-      this.atualizacaoStatusAgendada = undefined;
+  private inicializarAtualizacaoStatus(): void {
+    if (this.consultaStatus && !this.consultaStatus.closed) {
+      return;
     }
+
+    this.consultaStatus = interval(2_000)
+      .pipe(
+        exhaustMap(() => this.certificadosService.obterStatus(this.cursoId)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (status) => this.atualizarProcessamento(status),
+        error: (resposta: HttpErrorResponse) => {
+          this.mensagemErro.set(
+            this.obterMensagemErroApi(
+              resposta,
+              'Não foi possível atualizar o processamento dos certificados do curso.',
+            ),
+          );
+          this.pararAtualizacaoStatus();
+        },
+      });
+  }
+
+  private pararAtualizacaoStatus(): void {
+    this.consultaStatus?.unsubscribe();
+    this.consultaStatus = undefined;
   }
 
   private obterMensagemErroApi(resposta: HttpErrorResponse, mensagemPadrao: string): string {
